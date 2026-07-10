@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CondoDesk — le richieste del condominio, in una coda sola</title>
+<meta name="description" content="CondoDesk trasforma richieste, guasti e comunicazioni condominiali in ticket tracciabili. Si affianca al tuo gestionale, non lo sostituisce. Lista d'attesa aperta.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=IBM+Plex+Mono:wght@400;500&family=Inter+Tight:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<!-- Analytics cookieless: nessun cookie, nessun banner di consenso richiesto.
+     Sostituisci data-website-id con l'ID del sito da cloud.umami.is. -->
+<script defer src="https://cloud.umami.is/script.js" data-website-id="INSERISCI_UMAMI_WEBSITE_ID"></script>
+
+<style>
+  :root{
+    --sage:#7C9070; --sage-deep:#5B7052; --sage-dark:#2F3D33;
+    --ink:#222C24; --muted:#6D7A69;
+    --paper:#F3F5F0; --white:#FFFFFF;
+    --line:#E1E7DC; --line-strong:#C3CDBB;
+    --brass:#A9803C; --brass-pale:#F7F0E1;
+    --display:"Bricolage Grotesque","Inter Tight",system-ui,sans-serif;
+    --body:"Inter Tight",system-ui,-apple-system,sans-serif;
+    --mono:"IBM Plex Mono",ui-monospace,monospace;
+  }
+  *,*::before,*::after{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.6;-webkit-font-smoothing:antialiased;}
+  img,svg{max-width:100%;height:auto;display:block;}
+  .wrap{max-width:1120px;margin:0 auto;padding:0 24px;}
+
+  .eyebrow{font-family:var(--mono);font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;color:var(--sage-deep);margin:0 0 18px;display:flex;align-items:center;gap:12px;}
+  .eyebrow::after{content:"";flex:1;height:1px;background:var(--line-strong);max-width:120px;}
+  h1,h2,h3{font-family:var(--display);font-weight:800;letter-spacing:-.025em;line-height:1;margin:0;}
+  h1{font-size:clamp(2.5rem,5.4vw,4.15rem);line-height:.97;}
+  h2{font-size:clamp(1.9rem,3.4vw,2.75rem);}
+  h3{font-size:1.22rem;font-weight:600;letter-spacing:-.01em;line-height:1.2;}
+  .lede{font-size:clamp(1.02rem,1.4vw,1.16rem);color:var(--muted);max-width:52ch;}
+
+  .nav{position:sticky;top:0;z-index:20;background:rgba(243,245,240,.86);backdrop-filter:blur(10px);border-bottom:1px solid var(--line);}
+  .nav-in{display:flex;align-items:center;justify-content:space-between;height:66px;}
+  .brand{display:flex;align-items:center;gap:10px;font-family:var(--display);font-weight:800;letter-spacing:-.02em;font-size:1.16rem;}
+  .brand-mark{width:28px;height:28px;border-radius:7px;background:var(--sage-deep);color:#fff;display:grid;place-items:center;font-family:var(--mono);font-size:.66rem;}
+  .nav a.ghost{font-size:.92rem;color:var(--ink);text-decoration:none;font-weight:500;border:1px solid var(--line-strong);padding:9px 16px;border-radius:99px;background:var(--white);}
+  .nav a.ghost:hover{border-color:var(--sage);}
+
+  .hero{padding:76px 0 84px;}
+  .hero-grid{display:grid;grid-template-columns:1.02fr .98fr;gap:56px;align-items:center;}
+  .hero h1 .thin{font-weight:600;color:var(--sage-deep);display:block;}
+  .hero .lede{margin:22px 0 30px;}
+  .hero-art svg{width:100%;}
+  @keyframes drift{0%,100%{opacity:.55}50%{opacity:1}}
+  .tangle path{animation:drift 5s ease-in-out infinite;}
+  .tangle path:nth-child(even){animation-delay:1.4s;}
+  .tangle path:nth-child(3n){animation-delay:2.6s;}
+
+  .signup{max-width:480px;}
+  .seg{display:inline-flex;background:var(--white);border:1px solid var(--line-strong);border-radius:99px;padding:4px;gap:4px;margin-bottom:14px;}
+  .seg label{position:relative;}
+  .seg input{position:absolute;inset:0;opacity:0;cursor:pointer;}
+  .seg span{display:block;padding:8px 16px;border-radius:99px;font-size:.86rem;font-weight:500;color:var(--muted);cursor:pointer;white-space:nowrap;transition:background .15s,color .15s;}
+  .seg input:checked + span{background:var(--sage-deep);color:#fff;}
+  .seg input:focus-visible + span{outline:2px solid var(--brass);outline-offset:2px;}
+  .field{display:flex;gap:10px;flex-wrap:wrap;}
+  .field input[type=email]{flex:1 1 240px;min-width:0;padding:15px 18px;font:inherit;font-size:1rem;border:1px solid var(--line-strong);border-radius:12px;background:var(--white);color:var(--ink);}
+  .field input[type=email]::placeholder{color:#9AA79A;}
+  .field input[type=email]:focus{outline:2px solid var(--sage);outline-offset:1px;border-color:var(--sage);}
+  .btn{padding:15px 26px;font:inherit;font-weight:600;font-size:1rem;border:0;border-radius:12px;background:var(--sage-dark);color:#fff;cursor:pointer;transition:transform .12s,background .15s;}
+  .btn:hover{background:#1B241D;}
+  .btn:active{transform:translateY(1px);}
+  .btn:focus-visible{outline:2px solid var(--brass);outline-offset:2px;}
+  .btn[disabled]{opacity:.55;cursor:progress;}
+  .btn[disabled]:hover{background:var(--sage-dark);}
+  .fineprint{font-size:.82rem;color:var(--muted);margin:12px 0 0;}
+  .fineprint a{color:var(--sage-deep);}
+  .done{display:none;padding:18px 20px;border-radius:12px;background:#E4EBD8;border:1px solid var(--sage);}
+  .done p{margin:0;font-size:.95rem;}
+  .done strong{font-family:var(--display);font-size:1.1rem;display:block;margin-bottom:2px;}
+  .done:focus{outline:2px solid var(--sage);outline-offset:2px;}
+  .signup.is-done .seg,.signup.is-done .field,.signup.is-done .fineprint,.signup.is-done .err{display:none;}
+  .signup.is-done .done{display:block;}
+
+  .err{margin:12px 0 0;padding:12px 15px;border-radius:10px;background:#F8E7E3;border:1px solid #E0BDB4;color:#8C3A2B;font-size:.9rem;}
+  .err a{color:#8C3A2B;}
+  [hidden]{display:none!important;}
+  .hp{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden;}
+
+  .today{border-top:1px solid var(--line);padding:70px 0;}
+  .today-grid{display:grid;grid-template-columns:1fr 1.6fr;gap:48px;align-items:start;}
+  .today ul{list-style:none;margin:0;padding:0;}
+  .today li{font-family:var(--display);font-weight:600;font-size:clamp(1.25rem,2.3vw,1.7rem);letter-spacing:-.02em;line-height:1.25;padding:22px 0 22px 34px;border-bottom:1px solid var(--line);position:relative;color:var(--sage-dark);}
+  .today li:first-child{padding-top:0;}
+  .today li::before{content:"";position:absolute;left:0;top:34px;width:18px;height:2px;background:var(--brass);}
+  .today li:first-child::before{top:12px;}
+  .today li:last-child{border-bottom:0;}
+  .today .coda{margin-top:26px;font-family:var(--body);font-size:1rem;color:var(--muted);font-weight:400;letter-spacing:0;}
+
+  .features{background:var(--white);border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:82px 0;}
+  .features .lede{margin-top:16px;}
+  .cards{display:grid;grid-template-columns:repeat(3,1fr);gap:28px;margin-top:44px;}
+  .card{padding:30px;border:1px solid var(--line);border-radius:14px;background:var(--paper);transition:border-color .2s,transform .2s;}
+  .card:hover{border-color:var(--sage);transform:translateY(-3px);}
+  .card svg{width:52px;height:52px;margin-bottom:22px;}
+  .card p{margin:12px 0 0;color:var(--muted);font-size:.97rem;}
+
+  .manager{padding:88px 0;}
+  .manager-grid{display:grid;grid-template-columns:.85fr 1.15fr;gap:64px;align-items:center;}
+  .phone-stage{display:grid;place-items:center;padding:34px;border-radius:24px;background:radial-gradient(120% 90% at 50% 0%,#E4EBD8 0%,var(--paper) 70%);border:1px solid var(--line);}
+  .phone-stage svg{max-width:280px;filter:drop-shadow(0 24px 44px rgba(34,44,36,.18));}
+  .manager ul{list-style:none;margin:30px 0 0;padding:0;}
+  .manager li{display:flex;gap:16px;padding:20px 0;border-top:1px solid var(--line);}
+  .manager li:last-child{border-bottom:1px solid var(--line);}
+  .manager li .k{font-family:var(--mono);font-size:.72rem;letter-spacing:.14em;color:var(--brass);padding-top:5px;white-space:nowrap;min-width:96px;}
+  .manager li b{display:block;font-weight:600;}
+  .manager li span.d{color:var(--muted);font-size:.95rem;}
+
+  .position{background:var(--sage-dark);color:var(--white);padding:82px 0;}
+  .position .eyebrow{color:#9FBE86;}
+  .position .eyebrow::after{background:#4A5A4E;}
+  .position h2{max-width:20ch;}
+  .split{display:grid;grid-template-columns:1fr 1fr;gap:0;margin-top:48px;border:1px solid #4A5A4E;border-radius:16px;overflow:hidden;}
+  .split > div{padding:34px;}
+  .split .a{border-right:1px solid #4A5A4E;}
+  .split h3{font-size:1.02rem;font-family:var(--mono);font-weight:400;letter-spacing:.14em;text-transform:uppercase;font-size:.72rem;color:#8A9A8C;margin-bottom:20px;}
+  .split .b{background:#3A4A3E;}
+  .split .b h3{color:#9FBE86;}
+  .split ul{list-style:none;margin:0;padding:0;}
+  .split li{padding:11px 0;font-size:.98rem;color:#C6D4BE;border-bottom:1px solid #4A5A4E;}
+  .split li:last-child{border-bottom:0;}
+  .split .b li{color:#fff;}
+
+  .honest{background:var(--brass-pale);border-top:1px solid #E3D3AF;border-bottom:1px solid #E3D3AF;padding:72px 0;}
+  .honest .inner{max-width:660px;}
+  .honest p{color:#5E4C2B;}
+  .honest .eyebrow{color:var(--brass);}
+  .honest .eyebrow::after{background:#E3D3AF;}
+  .honest h2{color:#3F3316;}
+  .honest .note{font-size:.86rem;color:#8A7448;margin-top:24px;font-style:italic;}
+
+  .closing{padding:96px 0;background:var(--white);border-top:1px solid var(--line);}
+  .closing h2{max-width:16ch;}
+  .closing .lede{margin:20px 0 34px;}
+
+  footer{padding:36px 0;font-size:.85rem;color:var(--muted);border-top:1px solid var(--line);}
+  footer .fin{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;}
+  footer a{color:var(--muted);}
+
+  @media (max-width:900px){
+    .hero-grid,.today-grid,.manager-grid,.split{grid-template-columns:1fr;}
+    .hero-grid,.today-grid,.manager-grid{gap:40px;}
+    .hero{padding:52px 0 60px;}
+    .hero-art{order:-1;}
+    .cards{grid-template-columns:1fr;gap:18px;}
+    .phone-stage{order:2;}
+    .split .a{border-right:0;border-bottom:1px solid #4A5A4E;}
+  }
+  @media (prefers-reduced-motion:reduce){
+    html{scroll-behavior:auto;}
+    *,*::before,*::after{animation:none!important;transition:none!important;}
+  }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="wrap nav-in">
+    <div class="brand"><span class="brand-mark">CD</span> CondoDesk</div>
+    <a class="ghost" href="#lista">Entra in lista</a>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <p class="eyebrow">Anteprima · lista d'attesa</p>
+      <h1>Tutto quel rumore.<span class="thin">In una coda sola.</span></h1>
+      <p class="lede">CondoDesk trasforma richieste, guasti e comunicazioni in ticket tracciabili — con categoria, stato e storico. Si affianca al gestionale che usi già: non lo sostituisce, non ti chiede di migrare niente.</p>
+
+      <form class="signup" id="signup-hero" novalidate>
+        <div class="seg" role="radiogroup" aria-label="Chi sei" aria-required="true">
+          <label><input type="radio" name="ruolo-hero" value="amministratore" required><span>Amministro condomìni</span></label>
+          <label><input type="radio" name="ruolo-hero" value="residente"><span>Abito in condominio</span></label>
+        </div>
+        <div class="field">
+          <input id="email-hero" name="email" type="email" required placeholder="nome@studio.it" autocomplete="email" aria-label="Email">
+          <button class="btn" type="submit">Entra in lista</button>
+        </div>
+        <div class="hp" aria-hidden="true"><label>Sito web<input type="text" name="sito-web" tabindex="-1" autocomplete="off"></label></div>
+        <p class="fineprint">Niente spam. Un solo messaggio, quando apriamo i primi studi pilota. <a href="privacy.html">Privacy</a>.</p>
+        <p class="err" role="alert" hidden></p>
+        <div class="done" role="status" tabindex="-1"><p><strong>Sei in lista.</strong> Ti scriviamo prima di aprire i pilota.</p></div>
+      </form>
+    </div>
+    <div class="hero-art"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 660 520" width="660" height="520" role="img" aria-labelledby="hTitle hDesc">
+  <title id="hTitle">Richieste disordinate da tre condomìni che diventano una coda ordinata di ticket</title>
+  <desc id="hDesc">A sinistra tre palazzine da cui partono linee aggrovigliate; al centro le linee si raccolgono; a destra diventano una pila ordinata di ticket con stati.</desc>
+
+  <defs>
+    <marker id="arrowB" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+      <path d="M0 1 L9 5 L0 9 z" fill="#A9803C"/>
+    </marker>
+  </defs>
+
+  <g class="tangle" fill="none" stroke="#C3CDBB" stroke-width="1.6" stroke-linecap="round">
+    <path d="M126 116 C 210 92, 176 196, 268 214"/>
+    <path d="M126 140 C 232 158, 158 108, 274 226"/>
+    <path d="M126 164 C 196 214, 244 130, 272 238"/>
+    <path d="M126 262 C 214 240, 172 306, 276 250"/>
+    <path d="M126 286 C 218 300, 176 232, 274 262"/>
+    <path d="M126 310 C 200 268, 250 330, 272 272"/>
+    <path d="M126 396 C 212 386, 168 300, 274 286"/>
+    <path d="M126 420 C 226 404, 180 350, 272 296"/>
+    <path d="M126 444 C 198 448, 250 322, 270 306"/>
+  </g>
+
+  <g class="buildings">
+    <g>
+      <rect x="52" y="88" width="72" height="104" rx="3" fill="#FFFFFF" stroke="#7C9070" stroke-width="1.8"/>
+      <g fill="#E4EBD8"><rect x="64" y="102" width="18" height="20"/><rect x="94" y="102" width="18" height="20"/><rect x="64" y="132" width="18" height="20"/><rect x="94" y="132" width="18" height="20"/></g>
+      <rect x="78" y="164" width="20" height="28" fill="#F3F5F0" stroke="#C3CDBB"/>
+    </g>
+    <g>
+      <rect x="52" y="234" width="72" height="104" rx="3" fill="#FFFFFF" stroke="#7C9070" stroke-width="1.8"/>
+      <g fill="#E4EBD8"><rect x="64" y="248" width="18" height="20"/><rect x="94" y="248" width="18" height="20"/><rect x="64" y="278" width="18" height="20"/><rect x="94" y="278" width="18" height="20"/></g>
+      <rect x="78" y="310" width="20" height="28" fill="#F3F5F0" stroke="#C3CDBB"/>
+    </g>
+    <g>
+      <rect x="52" y="368" width="72" height="104" rx="3" fill="#FFFFFF" stroke="#7C9070" stroke-width="1.8"/>
+      <g fill="#E4EBD8"><rect x="64" y="382" width="18" height="20"/><rect x="94" y="382" width="18" height="20"/><rect x="64" y="412" width="18" height="20"/><rect x="94" y="412" width="18" height="20"/></g>
+      <rect x="78" y="444" width="20" height="28" fill="#F3F5F0" stroke="#C3CDBB"/>
+    </g>
+    <g fill="#7C9070">
+      <circle cx="126" cy="116" r="3.2"/><circle cx="126" cy="140" r="3.2"/><circle cx="126" cy="164" r="3.2"/>
+      <circle cx="126" cy="262" r="3.2"/><circle cx="126" cy="286" r="3.2"/><circle cx="126" cy="310" r="3.2"/>
+      <circle cx="126" cy="396" r="3.2"/><circle cx="126" cy="420" r="3.2"/><circle cx="126" cy="444" r="3.2"/>
+    </g>
+  </g>
+
+  <path d="M286 260 C 306 260, 306 260, 330 260" fill="none" stroke="#A9803C" stroke-width="2.2" marker-end="url(#arrowB)" class="throat"/>
+  <line x1="284" y1="196" x2="284" y2="324" stroke="#E1E7DC" stroke-width="1.5"/>
+
+  <g class="queue">
+    <rect x="356" y="120" width="256" height="72" rx="10" fill="#FFFFFF" stroke="#E1E7DC" stroke-width="1.5"/>
+    <rect x="372" y="138" width="58" height="5" rx="2.5" fill="#C3CDBB"/>
+    <rect x="372" y="154" width="132" height="7" rx="3.5" fill="#2F3D33"/>
+    <rect x="372" y="170" width="76" height="14" rx="7" fill="#F7F0E1"/>
+    <circle cx="382" cy="177" r="3" fill="#A9803C"/>
+    <rect x="390" y="174" width="44" height="5" rx="2.5" fill="#C9A567"/>
+
+    <rect x="356" y="204" width="256" height="72" rx="10" fill="#FFFFFF" stroke="#E1E7DC" stroke-width="1.5"/>
+    <rect x="372" y="222" width="46" height="5" rx="2.5" fill="#C3CDBB"/>
+    <rect x="372" y="238" width="158" height="7" rx="3.5" fill="#2F3D33"/>
+    <rect x="372" y="254" width="88" height="14" rx="7" fill="#E4EBD8"/>
+    <circle cx="382" cy="261" r="3" fill="#5B7052"/>
+    <rect x="390" y="258" width="56" height="5" rx="2.5" fill="#9FBE86"/>
+
+    <rect x="356" y="288" width="256" height="72" rx="10" fill="#FFFFFF" stroke="#E1E7DC" stroke-width="1.5"/>
+    <rect x="372" y="306" width="62" height="5" rx="2.5" fill="#C3CDBB"/>
+    <rect x="372" y="322" width="114" height="7" rx="3.5" fill="#2F3D33"/>
+    <rect x="372" y="338" width="70" height="14" rx="7" fill="#E4EBD8"/>
+    <circle cx="382" cy="345" r="3" fill="#5B7052"/>
+    <rect x="390" y="342" width="38" height="5" rx="2.5" fill="#9FBE86"/>
+
+    <rect x="356" y="372" width="256" height="60" rx="10" fill="#FFFFFF" stroke="#E1E7DC" stroke-width="1.5" opacity="0.6"/>
+    <rect x="372" y="390" width="52" height="5" rx="2.5" fill="#C3CDBB"/>
+    <rect x="372" y="406" width="126" height="7" rx="3.5" fill="#C3CDBB"/>
+  </g>
+
+  <g fill="#5B7052">
+    <rect x="356" y="96" width="34" height="4" rx="2"/>
+    <rect x="398" y="96" width="18" height="4" rx="2" opacity="0.4"/>
+    <rect x="424" y="96" width="24" height="4" rx="2" opacity="0.4"/>
+  </g>
+</svg></div>
+  </div>
+</header>
+
+<section class="today">
+  <div class="wrap today-grid">
+    <div>
+      <p class="eyebrow">Oggi funziona così</p>
+      <p class="lede">Tre canali, nessuno storico, nessun controllo reale sui fornitori. E la sensazione che qualcosa sia sempre sfuggito.</p>
+    </div>
+    <ul>
+      <li>Messaggi, foto e vocali sparsi in decine di chat diverse.</li>
+      <li>Telefonate che interrompono e non lasciano traccia scritta.</li>
+      <li>Richieste perse tra mille altre email, senza uno stato chiaro.</li>
+      <li class="coda">Su venti condomìni gestiti, sono centinaia di richieste al mese che nessun sistema sta contando.</li>
+    </ul>
+  </div>
+</section>
+
+<section class="features">
+  <div class="wrap">
+    <p class="eyebrow">Cosa c'è nella prima versione</p>
+    <h2>Tre cose, fatte bene.</h2>
+    <p class="lede">Nessuna contabilità, nessun social del condominio. Solo il flusso operativo che oggi ti sfugge di mano.</p>
+    <div class="cards">
+      <article class="card">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Ticket con stati">
+  <g fill="none" stroke="#5B7052" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M8 16a3 3 0 0 1 3-3h42a3 3 0 0 1 3 3v6a5 5 0 0 0 0 10v6a3 3 0 0 1-3 3H11a3 3 0 0 1-3-3v-6a5 5 0 0 0 0-10z"/>
+    <path d="M17 24h18M17 32h12"/>
+  </g>
+  <circle cx="18" cy="52" r="4" fill="#5B7052"/>
+  <circle cx="32" cy="52" r="4" fill="#5B7052"/>
+  <circle cx="46" cy="52" r="4" fill="#A9803C"/>
+  <path d="M22 52h6M36 52h6" stroke="#C3CDBB" stroke-width="2.4" stroke-linecap="round"/>
+</svg>
+        <h3>Ticket con stati</h3>
+        <p>Ogni richiesta ha categoria, priorità, allegati foto e video, e uno stato che chiunque può vedere: nuovo, assegnato, risolto.</p>
+      </article>
+      <article class="card">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Bacheca comunicazioni">
+  <g fill="none" stroke="#5B7052" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+    <rect x="9" y="12" width="46" height="34" rx="3"/>
+    <path d="M18 22h20M18 30h28M18 38h14"/>
+    <path d="M20 46v6M44 46v6"/>
+  </g>
+  <circle cx="47" cy="17" r="7" fill="#F7F0E1" stroke="#A9803C" stroke-width="2.4"/>
+  <circle cx="47" cy="17" r="2.4" fill="#A9803C"/>
+</svg>
+        <h3>Bacheca comunicazioni</h3>
+        <p>Un avviso raggiunge tutta la scala, con notifica email. Non attacchi più niente al portone e sai che è arrivato.</p>
+      </article>
+      <article class="card">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="Ruoli e permessi">
+  <path d="M32 7l19 7v15c0 12.4-8 21.6-19 25-11-3.4-19-12.6-19-25V14z" fill="none" stroke="#5B7052" stroke-width="2.4" stroke-linejoin="round"/>
+  <circle cx="24" cy="27" r="4.6" fill="none" stroke="#5B7052" stroke-width="2.2"/>
+  <path d="M16 41c1.4-4.4 4.4-6.8 8-6.8s6.6 2.4 8 6.8" fill="none" stroke="#5B7052" stroke-width="2.2" stroke-linecap="round"/>
+  <circle cx="41" cy="25" r="3.4" fill="#A9803C"/>
+  <path d="M35 36c1.1-3.3 3.3-5.1 6-5.1s4.9 1.8 6 5.1" fill="none" stroke="#A9803C" stroke-width="2.2" stroke-linecap="round"/>
+</svg>
+        <h3>Ruoli e permessi</h3>
+        <p>Studio, collaboratori, proprietari, inquilini, fornitori: ognuno vede solo ciò che gli serve. Nessuna chat pubblica.</p>
+      </article>
+    </div>
+  </div>
+</section>
+
+<section class="manager">
+  <div class="wrap manager-grid">
+    <div class="phone-stage"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 640" width="320" height="640" role="img" aria-label="Coda dei ticket vista dallo studio di amministrazione">
+  <defs>
+    <clipPath id="scr"><rect x="14" y="14" width="292" height="612" rx="30"/></clipPath>
+    <style>
+      .t{font-family:"Inter Tight","Helvetica Neue",Arial,sans-serif;}
+      .m{font-family:"IBM Plex Mono",ui-monospace,monospace;}
+    </style>
+  </defs>
+
+  <rect x="2" y="2" width="316" height="636" rx="42" fill="#222C24"/>
+  <rect x="14" y="14" width="292" height="612" rx="30" fill="#F3F5F0"/>
+
+  <g clip-path="url(#scr)">
+    <rect x="14" y="14" width="292" height="126" fill="#5B7052"/>
+    <rect x="130" y="24" width="60" height="6" rx="3" fill="#2F3D33" opacity="0.5"/>
+    <text class="m" x="34" y="64" font-size="9" letter-spacing="1.6" fill="#B7C9AC">CONDODESK</text>
+    <text class="t" x="34" y="88" font-size="17" font-weight="600" fill="#FFFFFF">Studio Rossi</text>
+    <text class="t" x="34" y="106" font-size="11" fill="#C6D4BE">23 condomìni · 41 ticket aperti</text>
+    <circle cx="278" cy="84" r="13" fill="#7C9070"/>
+    <text class="t" x="278" y="89" font-size="11" font-weight="600" fill="#FFFFFF" text-anchor="middle">SR</text>
+
+    <rect x="30" y="154" width="74" height="26" rx="13" fill="#2F3D33"/>
+    <text class="t" x="67" y="171" font-size="11" font-weight="600" fill="#FFFFFF" text-anchor="middle">Nuovi · 6</text>
+    <rect x="112" y="154" width="86" height="26" rx="13" fill="#FFFFFF" stroke="#E1E7DC"/>
+    <text class="t" x="155" y="171" font-size="11" fill="#6D7A69" text-anchor="middle">Assegnati</text>
+    <rect x="206" y="154" width="70" height="26" rx="13" fill="#FFFFFF" stroke="#E1E7DC"/>
+    <text class="t" x="241" y="171" font-size="11" fill="#6D7A69" text-anchor="middle">Risolti</text>
+
+    <rect x="30" y="198" width="260" height="96" rx="12" fill="#FFFFFF" stroke="#E1E7DC"/>
+    <rect x="30" y="198" width="4" height="96" rx="2" fill="#A9803C"/>
+    <text class="m" x="48" y="220" font-size="8" letter-spacing="1.4" fill="#8FA085">VIA MAZZINI 14 · INT. 7</text>
+    <text class="t" x="48" y="242" font-size="14" font-weight="600" fill="#222C24">Perdita in autorimessa</text>
+    <rect x="48" y="254" width="66" height="20" rx="10" fill="#F7F0E1"/>
+    <circle cx="60" cy="264" r="3.4" fill="#A9803C"/>
+    <text class="t" x="70" y="268" font-size="10" fill="#8A6730">Nuovo</text>
+    <rect x="122" y="254" width="62" height="20" rx="10" fill="#F3F5F0"/>
+    <text class="t" x="153" y="268" font-size="10" fill="#6D7A69" text-anchor="middle">2 foto</text>
+    <text class="m" x="270" y="268" font-size="9" fill="#B3BEAD" text-anchor="end">4 min fa</text>
+    <rect x="240" y="214" width="38" height="24" rx="6" fill="#E4EBD8"/>
+    <text class="t" x="259" y="230" font-size="10" font-weight="600" fill="#3F5238" text-anchor="middle">Alta</text>
+
+    <rect x="30" y="306" width="260" height="86" rx="12" fill="#FFFFFF" stroke="#E1E7DC"/>
+    <text class="m" x="48" y="328" font-size="8" letter-spacing="1.4" fill="#8FA085">C.SO ITALIA 3 · SCALA B</text>
+    <text class="t" x="48" y="350" font-size="14" font-weight="600" fill="#222C24">Ascensore fermo al 2°</text>
+    <rect x="48" y="362" width="94" height="20" rx="10" fill="#E4EBD8"/>
+    <circle cx="60" cy="372" r="3.4" fill="#5B7052"/>
+    <text class="t" x="70" y="376" font-size="10" fill="#3F5238">Assegnato</text>
+    <text class="m" x="270" y="376" font-size="9" fill="#B3BEAD" text-anchor="end">Liftech srl</text>
+
+    <rect x="30" y="404" width="260" height="86" rx="12" fill="#FFFFFF" stroke="#E1E7DC"/>
+    <text class="m" x="48" y="426" font-size="8" letter-spacing="1.4" fill="#8FA085">VIA MAZZINI 14 · INT. 3</text>
+    <text class="t" x="48" y="448" font-size="14" font-weight="600" fill="#222C24">Infiltrazione dal terrazzo</text>
+    <rect x="48" y="460" width="102" height="20" rx="10" fill="#F3F5F0" stroke="#E1E7DC"/>
+    <circle cx="60" cy="470" r="3.4" fill="#B3BEAD"/>
+    <text class="t" x="70" y="474" font-size="10" fill="#6D7A69">Duplicato?</text>
+    <text class="m" x="270" y="474" font-size="9" fill="#B3BEAD" text-anchor="end">unisci</text>
+
+    <rect x="30" y="502" width="260" height="42" rx="12" fill="#2F3D33"/>
+    <text class="t" x="160" y="528" font-size="12.5" font-weight="600" fill="#FFFFFF" text-anchor="middle">Invia avviso alla scala</text>
+
+    <rect x="14" y="562" width="292" height="64" fill="#FFFFFF"/>
+    <line x1="14" y1="562" x2="306" y2="562" stroke="#E1E7DC"/>
+    <g fill="none" stroke="#B3BEAD" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M126 599v-6a6 6 0 0 1 12 0v6l2 3h-16z"/><path d="M130 605a2.4 2.4 0 0 0 4 0"/>
+      <rect x="184" y="584" width="18" height="16" rx="2"/><path d="M188 590h10M188 595h6"/>
+      <circle cx="252" cy="590" r="6"/><path d="M242 604c1.6-5 5.6-8 10-8s8.4 3 10 8"/>
+    </g>
+    <g fill="none" stroke="#5B7052" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M62 588h16v14H62z"/><path d="M59 588l11-8 11 8"/>
+    </g>
+    <circle cx="70" cy="612" r="2.6" fill="#5B7052"/>
+    <circle cx="141" cy="583" r="3.4" fill="#A9803C"/>
+  </g>
+</svg></div>
+    <div>
+      <p class="eyebrow">La giornata dello studio</p>
+      <h2>Una coda per venti palazzi.</h2>
+      <ul>
+        <li><span class="k">TRIAGE</span><span><b>Le richieste arrivano in ordine</b><span class="d">In coda, con foto e priorità. Non alle 23:10 sul cellulare.</span></span></li>
+        <li><span class="k">FORNITORI</span><span><b>Assegni e segui l'intervento</b><span class="d">Chi ci sta lavorando, da quando, con che storico.</span></span></li>
+        <li><span class="k">CONDÒMINI</span><span><b>Vedono lo stato senza chiamarti</b><span class="d">La trasparenza è il modo più economico di ridurre le telefonate.</span></span></li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="position">
+  <div class="wrap">
+    <p class="eyebrow">Posizionamento</p>
+    <h2>Non un gestionale contabile. Un helpdesk verticale.</h2>
+    <div class="split">
+      <div class="a">
+        <h3>Il tuo gestionale</h3>
+        <ul>
+          <li>Contabilità, bilanci, rendiconti</li>
+          <li>Rate e millesimi</li>
+          <li>Adozione in mesi, cambio di sistema</li>
+          <li>Resta dov'è</li>
+        </ul>
+      </div>
+      <div class="b">
+        <h3>CondoDesk, sopra</h3>
+        <ul>
+          <li>Richieste, guasti, interventi</li>
+          <li>Ticket, stati, fornitori, report</li>
+          <li>Adozione in settimane, zero migrazione</li>
+          <li>Si affianca, non sostituisce</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="honest">
+  <div class="wrap inner">
+    <p class="eyebrow">Perché questa pagina esiste</p>
+    <h2>CondoDesk non esiste ancora.</h2>
+    <p>Prima di costruirlo vogliamo capire se serve davvero, e a chi. Questa pagina non vende niente: raccoglie email e una sola informazione — se amministri condomìni o se ci abiti. Se gli studi in lista saranno abbastanza, partiamo con un gruppo pilota. Se non lo saranno, te lo diciamo.</p>
+    <p class="note">Le stime di settore che circolano su questo mercato (numero di condomìni per studio, volume di richieste, quota gestita via WhatsApp) sono indicative e da validare con fonti di categoria. Non le useremo per convincerti.</p>
+  </div>
+</section>
+
+<section class="closing" id="lista">
+  <div class="wrap">
+    <p class="eyebrow">Lista d'attesa</p>
+    <h2>Ti scriviamo una volta sola.</h2>
+    <p class="lede">Quando apriamo i primi studi pilota, sarai tra i primi a saperlo.</p>
+
+    <form class="signup" id="signup-foot" novalidate>
+      <div class="seg" role="radiogroup" aria-label="Chi sei" aria-required="true">
+        <label><input type="radio" name="ruolo-foot" value="amministratore" required><span>Amministro condomìni</span></label>
+        <label><input type="radio" name="ruolo-foot" value="residente"><span>Abito in condominio</span></label>
+      </div>
+      <div class="field">
+        <input id="email-foot" name="email" type="email" required placeholder="nome@studio.it" autocomplete="email" aria-label="Email">
+        <button class="btn" type="submit">Entra in lista</button>
+      </div>
+      <div class="hp" aria-hidden="true"><label>Sito web<input type="text" name="sito-web" tabindex="-1" autocomplete="off"></label></div>
+      <p class="fineprint">Niente spam. Un solo messaggio, quando apriamo i primi studi pilota. <a href="privacy.html">Privacy</a>.</p>
+      <p class="err" role="alert" hidden></p>
+      <div class="done" role="status" tabindex="-1"><p><strong>Sei in lista.</strong> Ti scriviamo prima di aprire i pilota.</p></div>
+    </form>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap fin">
+    <span>CondoDesk — progetto in validazione, 2026</span>
+    <span><a href="privacy.html">Privacy</a> · <a href="mailto:ciao@condodesk.it">ciao@condodesk.it</a></span>
+  </div>
+</footer>
+
+<script>
+  // ID pubblico del form Loops (Settings → Forms). Non è un segreto: può stare
+  // in chiaro in un repo pubblico.
+  //
+  // Il double opt-in DEVE restare disattivato finché non c'è un dominio di invio
+  // verificato: Loops proverebbe a mandare l'email di conferma, non ci riuscirebbe,
+  // e la pagina direbbe "controlla la casella" per un messaggio che non arriva mai.
+  // Quando il dominio sarà verificato: attiva il double opt-in e rimetti il testo
+  // di conferma nel box .done.
+  const LOOPS_FORM_ID = "cmrf02234051u0j4i5prp4bfu";
+
+  const ENDPOINT = id => `https://app.loops.so/api/newsletter-form/${id}`;
+  const TROPPI_INVII = "rate-limit";
+
+  // Wrapper: per passare a Plausible basta cambiare questa riga.
+  const track = (evento, dati) => { try { window.umami?.track(evento, dati); } catch (_) {} };
+
+  document.querySelectorAll("form.signup").forEach(form => {
+    const emailInput = form.querySelector("input[type=email]");
+    const button     = form.querySelector("button[type=submit]");
+    const errBox     = form.querySelector(".err");
+    const honeypot   = form.querySelector("input[name='sito-web']");
+    const etichetta  = button.textContent;
+
+    const mostraErrore = messaggio => {
+      errBox.textContent = messaggio;
+      errBox.hidden = false;
+    };
+
+    form.addEventListener("submit", async e => {
+      e.preventDefault();
+      if (form.dataset.busy === "1") return; // niente doppio invio
+      errBox.hidden = true;
+
+      // Trappola per bot: campo invisibile agli umani. Se è pieno, fingi
+      // successo senza inviare nulla — non dare al bot un segnale utile.
+      if (honeypot.value !== "") { concludi(form); return; }
+
+      if (!emailInput.checkValidity()) {
+        mostraErrore("Controlla l'indirizzo email: sembra incompleto.");
+        emailInput.focus();
+        return;
+      }
+
+      const scelta = form.querySelector("input[type=radio]:checked");
+      if (!scelta) {
+        mostraErrore("Dicci se amministri condomìni o se ci abiti: è l'unica cosa che ti chiediamo oltre all'email.");
+        form.querySelector("input[type=radio]").focus();
+        return;
+      }
+      const ruolo = scelta.value;
+
+      if (!LOOPS_FORM_ID) {
+        console.error("LOOPS_FORM_ID non è configurato: l'iscrizione non è stata salvata.");
+        mostraErrore("Il modulo non è ancora attivo. Scrivici a ciao@condodesk.it.");
+        return;
+      }
+
+      form.dataset.busy = "1";
+      button.disabled = true;
+      button.textContent = "Invio…";
+
+      try {
+        const res = await fetch(ENDPOINT(LOOPS_FORM_ID), {
+          method: "POST",
+          headers: { "Content-Type": "application/x-www-form-urlencoded" },
+          // `ruolo` è una proprietà personalizzata definita in Loops. Se venisse
+          // rinominata o cancellata, Loops scarterebbe il campo in silenzio e
+          // risponderebbe comunque {"success":true}: il dato sparirebbe senza errori.
+          body: new URLSearchParams({ email: emailInput.value.trim(), ruolo })
+        });
+        // Loops limita per indirizzo IP: uno studio dietro un solo IP può
+        // beccarsi un 429 dopo pochi invii. Va detto, non nascosto.
+        if (res.status === 429) throw new Error(TROPPI_INVII);
+        const dati = await res.json().catch(() => ({}));
+        if (!res.ok || !dati.success) throw new Error(dati.message || `HTTP ${res.status}`);
+
+        track("iscrizione", { ruolo, sezione: form.id });
+        concludi(form);
+      } catch (err) {
+        console.error(err);
+        if (err.message === TROPPI_INVII) {
+          mostraErrore("Troppe iscrizioni da questa rete. Riprova tra un minuto.");
+        } else if (err.name === "TypeError") {
+          // fetch fallito a livello di rete: offline, DNS, o richiesta bloccata.
+          mostraErrore("Connessione non riuscita. Controlla la rete e riprova.");
+        } else {
+          mostraErrore("Non siamo riusciti a registrarti. Riprova tra poco, oppure scrivici a ciao@condodesk.it.");
+        }
+      } finally {
+        form.dataset.busy = "0";
+        button.disabled = false;
+        button.textContent = etichetta;
+      }
+    });
+  });
+
+  // Chiude entrambi i form: chi si iscrive dall'hero non deve ritrovarsi
+  // lo stesso invito in fondo alla pagina.
+  function concludi(formAttivo) {
+    document.querySelectorAll("form.signup").forEach(f => f.classList.add("is-done"));
+    formAttivo.querySelector(".done").focus();
+  }
+</script>
+</body>
+</html>

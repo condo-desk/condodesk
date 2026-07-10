@@ -1,0 +1,10 @@
+# OS / editor
+Thumbs.db
+Desktop.ini
+.DS_Store
+.vscode/
+.idea/
+
+# Node (non usato in produzione, ma capita di installarlo per test locali)
+node_modules/
+package-lock.json
